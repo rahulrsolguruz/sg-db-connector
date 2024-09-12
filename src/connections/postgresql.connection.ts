@@ -1,34 +1,43 @@
-import { Client } from "pg";
-import { IConnection } from "../interfaces/connection.interface";
-import { configService } from "../config/database.config";
+import { Pool } from "pg";
+import { config } from "dotenv";
 
-export class PostgreSQLConnection implements IConnection {
-  private client: Client;
+config(); // Load environment variables from .env file
 
-  constructor(private url: string = configService.get("POSTGRES_URL")) {
-    if (!url) {
-      throw new Error("PostgreSQL connection URL is not defined");
+export class PostgreSQLConnection {
+  private pool: Pool;
+
+  constructor(connectionString?: string) {
+    const connString = connectionString || process.env.DATABASE_URL;
+
+    if (connString) {
+      this.pool = new Pool({ connectionString: connString });
+    } else {
+      const host = process.env.DB_HOST;
+      const port = parseInt(process.env.DB_PORT || "5432", 10);
+      const user = process.env.DB_USERNAME;
+      const password = process.env.DB_PASSWORD;
+      const database = process.env.DB_NAME;
+
+      if (!host || !user || !password || !database) {
+        throw new Error("Missing PostgreSQL database configuration");
+      }
+
+      this.pool = new Pool({
+        host,
+        port,
+        user,
+        password,
+        database,
+      });
     }
-    this.client = new Client({ connectionString: url });
   }
 
-  async connect(): Promise<void> {
+  async connect() {
     try {
-      await this.client.connect();
-      console.log("Connected to PostgreSQL");
+      await this.pool.connect();
+      console.log("PostgreSQL connected");
     } catch (error) {
-      console.error("Error connecting to PostgreSQL:", error);
-      throw error;
-    }
-  }
-
-  async disconnect(): Promise<void> {
-    try {
-      await this.client.end();
-      console.log("Disconnected from PostgreSQL");
-    } catch (error) {
-      console.error("Error disconnecting from PostgreSQL:", error);
-      throw error;
+      console.error("PostgreSQL connection error:", error);
     }
   }
 }

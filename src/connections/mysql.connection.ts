@@ -1,35 +1,47 @@
-import mysql, { Pool } from "mysql2/promise";
-import { IConnection } from "../interfaces/connection.interface";
-import { configService } from "../config/database.config";
+import { createPool, Pool } from "mysql2/promise";
+import { config } from "dotenv";
 
-export class MySQLConnection implements IConnection {
+config(); // Load environment variables from .env file
+
+export class MySQLConnection {
   private pool: Pool;
 
-  constructor(private url: string = configService.get("MYSQL_URL")) {
-    if (!url) {
-      throw new Error("MySQL connection URL is not defined");
+  constructor(connectionString?: string) {
+    if (connectionString) {
+      const [userInfo, hostInfo] = connectionString.split("@");
+      const [user, password] = userInfo.split(":");
+      const [host, database] = hostInfo.split("/");
+      this.pool = createPool({
+        host,
+        user,
+        password,
+        database,
+      });
+    } else {
+      const host = process.env.DB_HOST;
+      const user = process.env.DB_USERNAME;
+      const password = process.env.DB_PASSWORD;
+      const database = process.env.DB_NAME;
+
+      if (!host || !user || !password || !database) {
+        throw new Error("Missing MySQL database configuration");
+      }
+
+      this.pool = createPool({
+        host,
+        user,
+        password,
+        database,
+      });
     }
-    this.pool = mysql.createPool({ uri: url });
   }
 
-  async connect(): Promise<void> {
+  async connect() {
     try {
-      const connection = await this.pool.getConnection();
-      console.log("Connected to MySQL");
-      connection.release();
+      await this.pool.getConnection();
+      console.log("MySQL connected");
     } catch (error) {
-      console.error("Error connecting to MySQL:", error);
-      throw error;
-    }
-  }
-
-  async disconnect(): Promise<void> {
-    try {
-      await this.pool.end();
-      console.log("Disconnected from MySQL");
-    } catch (error) {
-      console.error("Error disconnecting from MySQL:", error);
-      throw error;
+      console.error("MySQL connection error:", error);
     }
   }
 }

@@ -1,50 +1,31 @@
-import sqlite3, { Database } from "sqlite3";
-import { IConnection } from "../interfaces/connection.interface";
-import { configService } from "../config/database.config";
+import { Database, open } from "sqlite";
+import sqlite3 from "sqlite3";
+import { config } from "dotenv";
 
-export class SQLiteConnection implements IConnection {
-  private db: Database;
+config(); // Load environment variables from .env file
 
-  constructor(private url: string = configService.get("SQLITE_URL")) {
-    if (!url) {
-      throw new Error("SQLite connection URL is not defined");
+export class SQLiteConnection {
+  private db: Database | undefined;
+
+  constructor(private dbFilePath?: string) {
+    if (!dbFilePath) {
+      dbFilePath = process.env.DB_FILE_PATH;
     }
-    this.db = new sqlite3.Database(url, (err) => {
-      if (err) {
-        console.error("Error opening SQLite database:", err.message);
-        throw err;
-      }
-      console.log("Connected to SQLite");
-    });
   }
 
-  async connect(): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      this.db.serialize(() => {
-        this.db.get("SELECT 1", (err) => {
-          if (err) {
-            console.error("Error connecting to SQLite:", err.message);
-            reject(err);
-          } else {
-            console.log("Connected to SQLite");
-            resolve();
-          }
-        });
-      });
-    });
-  }
+  async connect() {
+    if (!this.dbFilePath) {
+      throw new Error("Database file path is required");
+    }
 
-  async disconnect(): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      this.db.close((err) => {
-        if (err) {
-          console.error("Error disconnecting from SQLite:", err.message);
-          reject(err);
-        } else {
-          console.log("Disconnected from SQLite");
-          resolve();
-        }
+    try {
+      this.db = await open({
+        filename: this.dbFilePath,
+        driver: sqlite3.Database,
       });
-    });
+      console.log("SQLite connected");
+    } catch (error) {
+      console.error("SQLite connection error:", error);
+    }
   }
 }

@@ -1,35 +1,27 @@
-import { MongoClient, MongoClientOptions } from "mongodb";
-import { IConnection } from "../interfaces/connection.interface";
-import { configService } from "../config/database.config";
+import { MongoClient } from "mongodb";
+import { config } from "dotenv";
 
-export class MongoDBConnection implements IConnection {
+config(); // Load environment variables from .env file
+
+export class MongoDBConnection {
   private client: MongoClient;
 
-  constructor(private url: string = configService.get("MONGODB_URL")) {
-    if (!url) {
-      throw new Error("MongoDB connection URL is not defined");
+  constructor(connectionString?: string) {
+    const connString = connectionString || process.env.MONGODB_URL;
+
+    if (!connString) {
+      throw new Error("MongoDB connection string is required");
     }
-    const options: MongoClientOptions = {};
-    this.client = new MongoClient(url, options);
+
+    this.client = new MongoClient(connString);
   }
 
-  async connect(): Promise<void> {
+  async connect() {
     try {
       await this.client.connect();
-      console.log("Connected to MongoDB");
+      console.log("MongoDB connected");
     } catch (error) {
-      console.error("Error connecting to MongoDB:", error);
-      throw error;
-    }
-  }
-
-  async disconnect(): Promise<void> {
-    try {
-      await this.client.close();
-      console.log("Disconnected from MongoDB");
-    } catch (error) {
-      console.error("Error disconnecting from MongoDB:", error);
-      throw error;
+      console.error("MongoDB connection error:", error);
     }
   }
 }
