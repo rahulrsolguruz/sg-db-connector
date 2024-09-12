@@ -1,4 +1,3 @@
-````markdown
 # SG DB Connector
 
 `sg-db-connector` is a flexible, environment-driven npm package that facilitates easy connections to various databases like PostgreSQL, MySQL, MongoDB, and SQLite. This package follows SOLID principles and is designed to be simple, modular, and easy to integrate into any Node.js project.
@@ -29,7 +28,6 @@ To install the package, run the following command:
 ```bash
 npm install sg-db-connector
 ```
-````
 
 ## Usage
 
@@ -140,3 +138,7 @@ SolGuruz® LLP
 ### Developer
 
 Rahul Rathod
+
+```
+
+```
