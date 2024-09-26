@@ -32,12 +32,28 @@ export class PostgreSQLConnection {
     }
   }
 
-  async connect() {
+  async connect(): Promise<void> {
     try {
-      await this.pool.connect();
+      const client = await this.pool.connect();
       console.log("PostgreSQL connected");
+      client.release(); // Release the connection back to the pool
     } catch (error) {
       console.error("PostgreSQL connection error:", error);
+      throw new Error("Failed to connect to PostgreSQL"); // Propagate the error
     }
+  }
+
+  async close(): Promise<void> {
+    try {
+      await this.pool.end(); // Close the pool to gracefully shut down
+      console.log("PostgreSQL pool closed");
+    } catch (error) {
+      console.error("Error closing PostgreSQL pool:", error);
+      throw new Error("Failed to close PostgreSQL connection pool");
+    }
+  }
+
+  getPool(): Pool {
+    return this.pool;
   }
 }

@@ -3,18 +3,21 @@ import { config as dotenvConfig } from "dotenv";
 dotenvConfig(); // Load environment variables from .env file
 
 export class ConfigService {
-  private readonly envConfig: { [key: string]: string | undefined };
+  private readonly envConfig: NodeJS.ProcessEnv;
 
   constructor() {
     this.envConfig = process.env;
+    if (!this.envConfig) {
+      throw new Error("Failed to load environment variables");
+    }
   }
 
-  get(key: string): string {
+  get(key: string, defaultValue?: string): string {
     const value = this.envConfig[key];
-    if (!value) {
+    if (!value && defaultValue === undefined) {
       throw new Error(`Missing environment variable: ${key}`);
     }
-    return value;
+    return value || defaultValue!;
   }
 
   getDatabaseConfig(): { [key: string]: string } {

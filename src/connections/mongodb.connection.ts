@@ -16,12 +16,27 @@ export class MongoDBConnection {
     this.client = new MongoClient(connString);
   }
 
-  async connect() {
+  async connect(): Promise<void> {
     try {
       await this.client.connect();
       console.log("MongoDB connected");
     } catch (error) {
       console.error("MongoDB connection error:", error);
+      throw new Error("Failed to connect to MongoDB"); // Propagating error
     }
+  }
+
+  async close(): Promise<void> {
+    try {
+      await this.client.close();
+      console.log("MongoDB connection closed");
+    } catch (error) {
+      console.error("Error closing MongoDB connection:", error);
+      throw new Error("Failed to close MongoDB connection"); // Propagating error
+    }
+  }
+
+  getClient(): MongoClient {
+    return this.client;
   }
 }
